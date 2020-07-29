@@ -21,8 +21,8 @@
 #include "ui_mainwindow.h"
 
 
-Profil:: Profil(int ligne, int colonne, int numero, int crit1, int crit2, int crit3, int crit4) :
-     m_numero(numero), m_row(ligne), m_col(colonne), m_crit1(crit1), m_crit2(crit2), m_crit3(crit3), m_crit4(crit4), m_clicked(0),m_state(0)
+Profil:: Profil(int ligne, int colonne, int numero, std::vector<int> crits) :
+     m_numero(numero), m_row(ligne), m_col(colonne),m_crits(crits), m_clicked(0),m_state(0)
 
 {
 
@@ -39,10 +39,14 @@ Profil:: Profil(int ligne, int colonne, int numero, int crit1, int crit2, int cr
 
         }
 
-   std::vector<int> percentagesT {crit1,crit2,crit3,crit4};
+
+
+   //std::vector<int> percentagesT {crit1,crit2,crit3,crit4};
+
+    std::vector<int> percentagesT = crits;
 
      this->setLayout(new QVBoxLayout);
-    for (int i=0; i<4;i++){
+    for (int i=0; i<crits.size();i++){
 
 
 

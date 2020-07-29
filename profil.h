@@ -11,20 +11,19 @@ class Profil : public QPushButton
 
 public:
 
-    Profil(int ligne, int colonne, int numero, int crit1, int crit2, int crit3, int crit4);
+    Profil(int ligne, int colonne, int numero,std::vector<int> crits);
 
     int getRow() const { return m_row; } ;
     int getCol() const { return m_col; } ;
     int getNumber() const {return m_numero;} ;
-    int getPhysique () const {return m_crit1;} ;
-    int getPsycho () const {return m_crit2;} ;
-    int getNutri () const {return m_crit3;} ;
-    int getCog () const {return m_crit4;} ;
-    int gerCrit5() const {return m_crit5;} ;
-    int gerCrit6() const {return m_crit6;} ;
+    int getPhysique () const {return m_crits[0];} ;
+    int getPsycho () const {return m_crits[1];} ;
+    int getNutri () const {return m_crits[2];} ;
+    int getCog () const {return m_crits[3];} ;
+    int gerCrit5() const {return m_crits[4];} ;
+    int gerCrit6() const {return m_crits[5];} ;
 
     void mouseMoveEvent(QMouseEvent *e) override;
-     //void mousePressEvent(QMouseEvent *e) override;
    void dropEvent(QDropEvent *e) override;
     void dragMoveEvent(QDragMoveEvent *e) override;
     void dragEnterEvent(QDragEnterEvent *e) override;
@@ -35,13 +34,8 @@ public:
         int m_row;
         int m_col;
 
+        std::vector<int> m_crits;
 
-        int m_crit1;
-        int m_crit2;
-        int m_crit3; 
-        int m_crit4;
-        int m_crit5;
-        int m_crit6;
       public :
         int m_clicked;
         int m_state;

@@ -46,20 +46,15 @@ MainWindow::MainWindow(QWidget *parent)
 {
     setAcceptDrops(false);
     ui->setupUi(this);
-
-    QPixmap bkgnd(":/img/stripes-light.png");
-        bkgnd = bkgnd.scaled(this->size(), Qt::KeepAspectRatio);
-
-        QPalette palette;
-        palette.setBrush(QPalette::Background, bkgnd);
-
-        this->setPalette(palette);
-
-
     this->setWindowTitle("Elicitation de préférences");
     //addAction(ui->actionQuitter);
 
+
+    //Désactive la possibilité d'éditer le tableWidget qui accueillera les résultats à la fin
     ui->tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+
+    //Lecture des degrés de comparaison présents dans le fichier "degrees.pnl"
 
     QFile file("degrees.pnl");
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -79,7 +74,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->spinBox->hide();
     ui->exProfil->hide();
-    ui->exProfil= new Profil(0,0,0,4,6,2,3);
+    ui->exProfil= new Profil(0,0,0,{4,6,2,3});
     ui->exProfil->setGeometry(10,40,180,100);
     ui->undo->hide();
     ui->labelNbGroupes->hide();
@@ -144,27 +139,18 @@ void MainWindow::loadFile(){
      while (!in.atEnd()) {
          QString line = in.readLine();
          std::vector<int> contenuLigne;
-         if (line.size()==7){
-         for (int i=0;i<line.size();i++){
-         contenuLigne.push_back((int)line[i].digitValue());
-         }
-         prof = new Profil(contenuLigne[0],contenuLigne[1],contenuLigne[2],contenuLigne[3],contenuLigne[4],contenuLigne[5],contenuLigne[6]);
-         prof->setParent(ui->scrollArea);
-             prof->setObjectName(QString::number(contenuLigne[2]));
-             allProfils.push_back(prof);
-         }
-         else if (line.size()==8){
+         std::vector<int> criterium;
              contenuLigne.push_back((int)line[0].digitValue());
              contenuLigne.push_back((int)line[1].digitValue());
              contenuLigne.push_back((QString(line[2])+QString(line[3])).toInt());
              for (int i=4;i<line.size();i++){
-             contenuLigne.push_back((int)line[i].digitValue());}
+             criterium.push_back((int)line[i].digitValue());}
 
-             prof = new Profil(contenuLigne[0],contenuLigne[1],contenuLigne[2],contenuLigne[3],contenuLigne[4],contenuLigne[5],contenuLigne[6]);
+             prof = new Profil(contenuLigne[0],contenuLigne[1],contenuLigne[2],criterium);
              prof->setParent(ui->scrollArea);
                  prof->setObjectName(QString::number(contenuLigne[2]));
                  allProfilsDoz.push_back(prof);
-         }
+
 
                     ui->gridLayout->addWidget(prof,contenuLigne[0],contenuLigne[1]);
                     QLabel *info = new QLabel();
