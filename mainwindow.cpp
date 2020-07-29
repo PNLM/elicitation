@@ -34,7 +34,7 @@ int nbGroupes =0;
 int profPerRow = 6;
 std::vector<QString> levels{"Sélectionnez..."};
 QPointer<Profil> prof;
-
+int LIGNE_MAX;
 std::list<QLabel *> labelList;
 std::vector<QLabel *> labelVec;
 
@@ -156,6 +156,12 @@ void MainWindow::loadFile(){
             prof = new Profil(contenuLigne[0],contenuLigne[1],contenuLigne[2],criterium);
             prof->setParent(ui->scrollArea);
             prof->setObjectName(QString::number(contenuLigne[2]));
+
+            // LES SIX PREMIERS PROFILS ONT LE DROIT A UNE COULEUR DIFFERENTE
+            if (prof->getNumber()<7)
+            { prof->setStyleSheet("QPushButton{background-color:rgb(255, 249, 164);color:rgb(255, 249, 164);}");}
+
+
             allProfils.push_back(prof);
 
 
@@ -170,7 +176,7 @@ void MainWindow::loadFile(){
 
 
 
-                    if (contenuLigne[0]==3)
+                    if (contenuLigne[0]==LIGNE_MAX)
                     {
                         if ((contenuLigne[1]<8))
 
@@ -179,12 +185,15 @@ void MainWindow::loadFile(){
 
                     else {ui->gridLayout->addWidget(info,contenuLigne[0],contenuLigne[1]+1);}
 
-                    if (indicesOrdre.size()<20){
+                    if (indicesOrdre.size()<allProfils.size()){
                    indicesOrdre.push_back(prof->getNumber());
                    profilsOrdre.push_back(prof);}
 
                    ui->begin->setEnabled(true);
      }
+
+     LIGNE_MAX=prof->getRow();
+     std::cout << LIGNE_MAX <<std::endl;
 
 
 
@@ -193,7 +202,7 @@ void MainWindow::loadFile(){
         ui->tableWidget->setColumnCount(levels.size()+1);
         ui->tableWidget->setItem(0, 0,new QTableWidgetItem(QString::number(allProfils.size())));
 
-        ui->tableWidget->setItem(0, 1, new QTableWidgetItem(QString::number(levels.size())));
+        ui->tableWidget->setItem(0, 1, new QTableWidgetItem(QString::number(levels.size()-1)));
         ui->tableWidget->setItem(0, 2, new QTableWidgetItem(""));
         ui->tableWidget->setItem(0, 3, new QTableWidgetItem(""));
         ui->tableWidget->setItem(0, 4, new QTableWidgetItem(""));
@@ -228,41 +237,40 @@ void MainWindow::beginRank(){
 
 
 
-                // TEST : le label indiquant le degré de comparaison dans l'affichage
+                // labelDeg : le label indiquant le degré de comparaison dans l'affichage
 
-                QLabel *TEST = new QLabel();
+                QLabel *labelDeg = new QLabel();
                 if (QString::number(compaActuelle) == "0")
-                {TEST->setText("<=>");}
-                else if(QString::number(compaActuelle) == "1")
-                {TEST->setText(" (faible) \n    > ");}
-                else if(QString::number(compaActuelle) == "2")
-                {TEST->setText(" (interm.) \n     >");}
-                else if(QString::number(compaActuelle) == "3")
-                {TEST->setText(" (forte) \n    > ");}
+                {labelDeg->setText("<=>");}
 
-                TEST->setMaximumSize(45,115);
-                labelList.push_back(TEST);
-                labelVec.push_back(TEST);
+                else if  (QString::number(compaActuelle) != "-1")
+                {labelDeg->setText("(" + levels[compaActuelle+1].left(5) +") \n    > ");}
+
+                labelDeg->setMaximumSize(45,115);
+                labelList.push_back(labelDeg);
+                labelVec.push_back(labelDeg);
 
                 if (i>=1&&i<(unsigned long long)profPerRow+1){
                 ui->gridTest->addWidget(profilsOrdre[i-1],1,2*(i-1));
-                ui->gridTest->addWidget(TEST,1,2*(i-1)+1);
+                ui->gridTest->addWidget(labelDeg,1,2*(i-1)+1);
                 profilsOrdre[i-1]->setEnabled(false);
 
                 }
                 else if (i==0){}
 
-                else if (i<(unsigned long long)(2*profPerRow)+1){
+                else
 
-                ui->gridTest->addWidget(profilsOrdre[i-1],2,2*(i-7));
-                ui->gridTest->addWidget(TEST,2,2*(i-7)+1);
-                profilsOrdre[i-1]->setEnabled(false);}
+                    for (int r=2; r<LIGNE_MAX+1;r++)
 
-                else if (i<(unsigned long long)(3*profPerRow)+1){
+                    {if (i<(unsigned long long)(r*profPerRow)+1){
 
-                ui->gridTest->addWidget(profilsOrdre[i-1],3,2*(i-13));
-                ui->gridTest->addWidget(TEST,3,2*(i-13)+1);
-                profilsOrdre[i-1]->setEnabled(false);}
+                            ui->gridTest->addWidget(profilsOrdre[i-1],r,2*(i-1-(r-1)*profPerRow));
+                            ui->gridTest->addWidget(labelDeg,r,2*(i-1-(r-1)*profPerRow)+1);
+                            profilsOrdre[i-1]->setEnabled(false);
+                            break;
+                        }
+
+                    }
 
                 ui->label_eval->show();
                 }
@@ -272,17 +280,15 @@ void MainWindow::beginRank(){
 
                 if ((int)checkClicks==(int)(allProfils.size()-1)){
 
-                    QLabel *TEST = new QLabel();
+                    QLabel *labelDeg = new QLabel();
                     if (QString::number(compaActuelle) == "0")
-                    {TEST->setText("<=>");}
-                    else if(QString::number(compaActuelle) == "1")
-                    {TEST->setText(" (faible) \n    > ");}
-                    else if(QString::number(compaActuelle) == "2")
-                    {TEST->setText(" (interm.) \n     >");}
-                    else if(QString::number(compaActuelle) == "3")
-                    {TEST->setText(" (forte) \n    > ");}
+                    {labelDeg->setText("<=>");}
+                    else if  (QString::number(compaActuelle) != "-1")
 
-                    TEST->setMaximumSize(45,115);
+                        // On ne garde que les 6 premiers caractères du nom du degré pour avoir uen longueur à peu près homogène
+                    {labelDeg->setText("(" + levels[compaActuelle+1].left(5) +") \n    > ");}
+
+                    labelDeg->setMaximumSize(45,115);
 
                     int a = allProfils.size()-1;
                     ui->tableWidget->setItem(allProfils.size(),0,new QTableWidgetItem(QString::number(((float)profilsOrdre[a]->getPhysique()-1)/5)));
@@ -291,10 +297,12 @@ void MainWindow::beginRank(){
                        ui->tableWidget->setItem(allProfils.size(),3,new QTableWidgetItem(QString::number(((float)profilsOrdre[a]->getCog()-1)/5)));
                         ui->tableWidget->setItem(allProfils.size(),4,new QTableWidgetItem(QString::number(compaActuelle)));
 
-                       ui->gridTest->addWidget(profilsOrdre[a-1],4,0);
-                       ui->gridTest->addWidget(TEST,4,1);
+                       ui->gridTest->addWidget(profilsOrdre[a-1]);
+
+                       ui->gridTest->addWidget(labelDeg);
                         profilsOrdre[a-1]->setEnabled(false);
-                        ui->gridTest->addWidget(profilsOrdre[a],4,2);
+
+                        ui->gridTest->addWidget(profilsOrdre[a]);
                         profilsOrdre[a]->setEnabled(false);
 
                     ui->label_eval->setText("Comparaisons terminées");
@@ -307,7 +315,12 @@ void MainWindow::beginRank(){
                 ui->undo->hide();
                 return;
                 };
-            }
+
+
+
+
+
+        }
     }
 
 // PREVIOUSCOMPA : Permet de revenir en arrière lors de la sélection du degré de différence
@@ -338,18 +351,8 @@ labelList.pop_back();
 
 
 void MainWindow::showResults(){
-
     ui->tableWidget->show();
     ui->suite->hide();
-
-
-    for (unsigned long long i =0; i<labelVec.size();i++)
-    {QLabel *lastWidget = labelVec[i];
-        ui->gridTest->removeWidget(lastWidget);
-        lastWidget->hide();
-
-   }
-
 }
 
 // SAVEFILE : Gère la sauvegarde du fichier de résultats
@@ -364,10 +367,10 @@ void MainWindow::saveFile(){
 
         QStringList strList;
 
-        for( int r = 0; r < 21; ++r )
+        for( int r = 0; r < allProfils.size()+1; ++r )
         {
             strList.clear();
-            for( int c = 0; c < 5; ++c )
+            for( int c = 0; c < levels.size()+1; ++c )
             {
                 strList << "\" "+ui->tableWidget->item( r, c )->text()+"\" ";
             }
@@ -379,7 +382,6 @@ void MainWindow::saveFile(){
 
     }
 }
-
 
 //----------------------------------------------
 
@@ -418,8 +420,6 @@ void MainWindow::reset(){
 
 void MainWindow::checkDiff(int k)
 {
-
-
     if (ui->comboBox->currentIndex()!=0) {
 
     // COMPARAISONS
@@ -498,20 +498,13 @@ void MainWindow::ShowProfils(){
 }
 
 // HIDEMENU : Affiche les instructions après avoir cliqué sur "Commencer"
-// Prend en compte le nombre de groupes spécifié (fonction désactivée)
+
 
 void MainWindow::hideMenu(){
     ui->stackedWidget->setCurrentIndex(0);
-    //nbGroupes = ui->spinBox->value();
     ui->stackedWidget->addWidget(ui->exProfil);
     ui->exProfil->show();
 
-    for (int i=0; i<nbGroupes ; i++)
-    {
-        std::vector<QPushButton* > groupe;
-        listeGroupes.push_back(groupe);
-
-    }
 }
 
 
@@ -526,14 +519,14 @@ void MainWindow::confirm(){
     //flag indiquant s'il y a des incohérences, conditionne le passage à l'écran suivant
     int inco = 0;
 
-    //Détection des incohérences
+    //Détection des incohérences : les profils mal placés sont coloriés en rouge !
 
     for (unsigned long long i =1; i<profilsOrdre.size()-1;i++)
     {Profil *A = profilsOrdre[i];
+
         if (A->getNumber()<7)
-        { A->setStyleSheet("QToolButton{background-color:rgb(255, 249, 164);color:rgb(255, 249, 164);}");
-        }
-        else{A->setStyleSheet("QToolButton{background-color:white;color:white;}");}
+        { A->setStyleSheet("QPushButton{background-color:rgb(255, 249, 164);color:rgb(255, 249, 164);}");}
+
 
         for (unsigned long long j =i+1; j<profilsOrdre.size()-1;j++){
         Profil *B = profilsOrdre[j];
@@ -541,7 +534,6 @@ void MainWindow::confirm(){
         if ( ((A->getPhysique()<B->getPhysique()) && (A->getPsycho()<B->getPsycho()) && (A->getNutri()<B->getNutri()) && (A->getCog()< B->getCog()) ))
 {            ui->label->setText("Il reste des incohérences !");
            A->setStyleSheet("QPushButton{background-color:rgb(255, 0, 0);color:rgb(255, 249, 164);}");
-            // A->setStyleSheet("QToolButton{background-color:rgb(255, 0, 0);}");
         inco +=1;}}
 }
 
@@ -651,7 +643,7 @@ else {
                                 info->setMinimumSize(QSize(40, 115));
                                 info->setMaximumSize(QSize(40, 115));
                                 info->setText("   >");
-                                if (row==3)
+                                if (row==LIGNE_MAX)
                                 {if ((col<8))
 
                                    { ui->gridLayout->addWidget(info,row,col+1);}}
