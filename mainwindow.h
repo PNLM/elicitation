@@ -30,7 +30,7 @@ public slots:
     void showResults();
     void connexionProfil(Profil* A, Profil* B);
     void ShowProfils();
-    void CheckDiff(int k);
+    void checkDiff(int k);
     void endSplash();
     void confirm();
     void confirm2();

@@ -24,7 +24,6 @@ std::vector<QPushButton *> newProfils;
 typedef std::pair<int,int> intPair;
 std::vector<std::pair<int,int>> liste;
 std::vector<Profil *> allProfils;
-std::vector<Profil *> allProfilsDoz;
 std::vector<int> indicesOrdre;
 std::vector<Profil *> profilsOrdre;
 std::vector<std::vector<QPushButton*>> listeGroupes;
@@ -38,6 +37,7 @@ QPointer<Profil> prof;
 
 std::list<QLabel *> labelList;
 std::vector<QLabel *> labelVec;
+
 // FENÊTRE PRINCIPALE------------------------
 
 MainWindow::MainWindow(QWidget *parent)
@@ -71,26 +71,25 @@ MainWindow::MainWindow(QWidget *parent)
     ui->tableWidget->hide();
     loadFile();
 
-
-    ui->spinBox->hide();
+//Création du profil utilisé dans l'écran d'instructions
     ui->exProfil->hide();
     ui->exProfil= new Profil(0,0,0,{4,6,2,3});
     ui->exProfil->setGeometry(10,40,180,100);
-    ui->undo->hide();
-    ui->labelNbGroupes->hide();
-    ui->pushButton->hide();
 
+
+//Divers éléments créés dans le form qu'il faut cacher au lancement de l'appli
+    ui->undo->hide();
+    ui->pushButton->hide();
     ui->save->hide();
     ui->suite->hide();
     ui->quit->hide();
-
     ui->groupeSuivant->hide();
     ui->scrollArea->hide();
     ui->label->hide();
-
     ui->valider->hide();
     ui->stackedWidget->raise();
     ui->stackedWidget->setCurrentIndex(1);
+
 
     QWidget *w = new QWidget;
     w->setLayout(ui->gridLayout);
@@ -101,11 +100,13 @@ MainWindow::MainWindow(QWidget *parent)
     ui->comboBox->hide();
     ui->label_eval->hide();
 
+
+    //Connexions entre boutons et fonctions
     QObject::connect(ui->valider, SIGNAL(clicked()),this , SLOT(confirm()));
     QObject::connect(ui->cont2, SIGNAL(clicked()),this , SLOT(confirm2()));
     QObject::connect(ui->begin, SIGNAL(clicked()),this , SLOT(hideMenu()));
     QObject::connect(ui->cont, SIGNAL(clicked()),this , SLOT(endSplash()));
-    QObject::connect(ui->comboBox,SIGNAL(currentIndexChanged(int)),this, SLOT(CheckDiff(int)));
+    QObject::connect(ui->comboBox,SIGNAL(currentIndexChanged(int)),this, SLOT(checkDiff(int)));
     QObject::connect(ui->pushButton, SIGNAL(clicked()),this , SLOT(loadFile()));
     //QObject::connect(ui->groupeSuivant, SIGNAL(clicked()),this , SLOT(groupeSuivant()));
     QObject::connect(ui->save, SIGNAL(clicked()),this , SLOT(saveFile()));
@@ -135,28 +136,37 @@ void MainWindow::loadFile(){
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
          return;
 
+
+
+    //Lecture des lignes de data.pnl
      QTextStream in(&file);
      while (!in.atEnd()) {
          QString line = in.readLine();
          std::vector<int> contenuLigne;
          std::vector<int> criterium;
-             contenuLigne.push_back((int)line[0].digitValue());
-             contenuLigne.push_back((int)line[1].digitValue());
-             contenuLigne.push_back((QString(line[2])+QString(line[3])).toInt());
+             contenuLigne.push_back((int)line[0].digitValue());  //ligne
+             contenuLigne.push_back((int)line[1].digitValue());  //colonne
+             contenuLigne.push_back((QString(line[2])+QString(line[3])).toInt()); //numéro (deux caractères aloués)
              for (int i=4;i<line.size();i++){
-             criterium.push_back((int)line[i].digitValue());}
-
-             prof = new Profil(contenuLigne[0],contenuLigne[1],contenuLigne[2],criterium);
-             prof->setParent(ui->scrollArea);
-                 prof->setObjectName(QString::number(contenuLigne[2]));
-                 allProfilsDoz.push_back(prof);
+             criterium.push_back((int)line[i].digitValue());} //les caractères restants sont aussi nombreux qu'il y a de critères. Ils sont regroupés dans la liste criterium.
 
 
-                    ui->gridLayout->addWidget(prof,contenuLigne[0],contenuLigne[1]);
-                    QLabel *info = new QLabel();
-                    info->setMinimumSize(QSize(40, 115));
-                    info->setMaximumSize(QSize(40, 115));
-                    info->setText("   >");
+             //Création d'un profil à partir des informations parsées.
+
+            prof = new Profil(contenuLigne[0],contenuLigne[1],contenuLigne[2],criterium);
+            prof->setParent(ui->scrollArea);
+            prof->setObjectName(QString::number(contenuLigne[2]));
+            allProfils.push_back(prof);
+
+
+            ui->gridLayout->addWidget(prof,contenuLigne[0],contenuLigne[1]);
+
+
+
+            QLabel *info = new QLabel();
+            info->setMinimumSize(QSize(40, 115));
+            info->setMaximumSize(QSize(40, 115));
+            info->setText("   >");
 
 
 
@@ -179,10 +189,11 @@ void MainWindow::loadFile(){
 
 
 
-       ui->tableWidget->setRowCount(21);
-       ui->tableWidget->setColumnCount(5);
-        ui->tableWidget->setItem(0, 0,new QTableWidgetItem(QString::number(allProfils.size()+allProfilsDoz.size())));
-        ui->tableWidget->setItem(0, 1, new QTableWidgetItem("4"));
+        ui->tableWidget->setRowCount(allProfils.size()+1);
+        ui->tableWidget->setColumnCount(levels.size()+1);
+        ui->tableWidget->setItem(0, 0,new QTableWidgetItem(QString::number(allProfils.size())));
+
+        ui->tableWidget->setItem(0, 1, new QTableWidgetItem(QString::number(levels.size())));
         ui->tableWidget->setItem(0, 2, new QTableWidgetItem(""));
         ui->tableWidget->setItem(0, 3, new QTableWidgetItem(""));
         ui->tableWidget->setItem(0, 4, new QTableWidgetItem(""));
@@ -191,10 +202,11 @@ void MainWindow::loadFile(){
 
 
 // BEGINRANK : Gère l'affichage des profils lors de la phase de comparaison 2 à 2.
+// S'occupe en même temps de l'écriture du csv.
 
 void MainWindow::beginRank(){
 
-        for (unsigned long long i=0; i<allProfils.size()+allProfilsDoz.size()-1; i++)
+        for (unsigned long long i=0; i<allProfils.size()-1; i++)
         {
                 checkRank = 1;
                 if (checkClicks ==(int)i){
@@ -213,6 +225,10 @@ void MainWindow::beginRank(){
                 profilsOrdre[i]->setStyleSheet("QToolButton{background-color:white;color: white;}");
                 profilsOrdre[i+1]->show();
                 profilsOrdre[i]->setStyleSheet("QToolButton{background-color:white;color: white;}");
+
+
+
+                // TEST : le label indiquant le degré de comparaison dans l'affichage
 
                 QLabel *TEST = new QLabel();
                 if (QString::number(compaActuelle) == "0")
@@ -235,6 +251,7 @@ void MainWindow::beginRank(){
 
                 }
                 else if (i==0){}
+
                 else if (i<(unsigned long long)(2*profPerRow)+1){
 
                 ui->gridTest->addWidget(profilsOrdre[i-1],2,2*(i-7));
@@ -250,7 +267,10 @@ void MainWindow::beginRank(){
                 ui->label_eval->show();
                 }
 
-                if ((int)checkClicks==(int)(allProfils.size()+allProfilsDoz.size()-1)){
+
+                //CAS DU DERNIER PROFIL A AFFICHER
+
+                if ((int)checkClicks==(int)(allProfils.size()-1)){
 
                     QLabel *TEST = new QLabel();
                     if (QString::number(compaActuelle) == "0")
@@ -264,12 +284,12 @@ void MainWindow::beginRank(){
 
                     TEST->setMaximumSize(45,115);
 
-                    int a = allProfils.size()+allProfilsDoz.size()-1;
-                    ui->tableWidget->setItem(allProfils.size()+allProfilsDoz.size(),0,new QTableWidgetItem(QString::number(((float)profilsOrdre[a]->getPhysique()-1)/5)));
-                     ui->tableWidget->setItem(allProfils.size()+allProfilsDoz.size(),1,new QTableWidgetItem(QString::number(((float)profilsOrdre[a]->getPsycho()-1)/5)));
-                      ui->tableWidget->setItem(allProfils.size()+allProfilsDoz.size(),2,new QTableWidgetItem(QString::number(((float)profilsOrdre[a]->getNutri()-1)/5)));
-                       ui->tableWidget->setItem(allProfils.size()+allProfilsDoz.size(),3,new QTableWidgetItem(QString::number(((float)profilsOrdre[a]->getCog()-1)/5)));
-                        ui->tableWidget->setItem(allProfils.size()+allProfilsDoz.size(),4,new QTableWidgetItem(QString::number(compaActuelle)));
+                    int a = allProfils.size()-1;
+                    ui->tableWidget->setItem(allProfils.size(),0,new QTableWidgetItem(QString::number(((float)profilsOrdre[a]->getPhysique()-1)/5)));
+                     ui->tableWidget->setItem(allProfils.size(),1,new QTableWidgetItem(QString::number(((float)profilsOrdre[a]->getPsycho()-1)/5)));
+                      ui->tableWidget->setItem(allProfils.size(),2,new QTableWidgetItem(QString::number(((float)profilsOrdre[a]->getNutri()-1)/5)));
+                       ui->tableWidget->setItem(allProfils.size(),3,new QTableWidgetItem(QString::number(((float)profilsOrdre[a]->getCog()-1)/5)));
+                        ui->tableWidget->setItem(allProfils.size(),4,new QTableWidgetItem(QString::number(compaActuelle)));
 
                        ui->gridTest->addWidget(profilsOrdre[a-1],4,0);
                        ui->gridTest->addWidget(TEST,4,1);
@@ -383,7 +403,7 @@ void MainWindow::reset(){
     ui->comboBox->hide();
 
     allProfils.clear();
-    allProfilsDoz.clear();
+
     loadFile();
     profilsOrdre.clear();
     indicesOrdre.clear();
@@ -393,18 +413,17 @@ void MainWindow::reset(){
 }
 
 
-// CHECKDIFF : GERE L'ECRITURE DANS LE CSV & LE PASSAGE AUX COMPARAISONS SUIVANTES
+// checkDiff : GERE L'ECRITURE DANS LE CSV & LE PASSAGE AUX COMPARAISONS SUIVANTES
+// Le nom du degré de différence est récupéré dans la liste `levels`
 
-
-void MainWindow::CheckDiff(int k)
+void MainWindow::checkDiff(int k)
 {
 
 
     if (ui->comboBox->currentIndex()!=0) {
-        //if (combo->currentIndex()!=0) {
 
     // COMPARAISONS
-    //AUCUNE
+    //AUCUNE (à part puisque le message est différent)
     if (ui->comboBox->currentText()==levels[1])
 
     {
@@ -466,9 +485,7 @@ void MainWindow::DisableProfils(){
         allProfils[i]->setStyleSheet("");
     }
 
-    for (unsigned long long i =0; i<allProfilsDoz.size();i++)
-    {allProfilsDoz[i]->m_clicked=3;
-    allProfilsDoz[i]->setStyleSheet("");}
+
 }
 
 // SHOWPROFILS : Affiche tous les profils
@@ -477,16 +494,15 @@ void MainWindow::ShowProfils(){
     for (unsigned long long i =0; i<allProfils.size();i++)
     {allProfils[i]->show();}
 
-    for (unsigned long long i =0; i<allProfilsDoz.size();i++)
-    {allProfilsDoz[i]->show();}
+
 }
 
 // HIDEMENU : Affiche les instructions après avoir cliqué sur "Commencer"
-// Prend en compte le nombre de groupes spécifié
+// Prend en compte le nombre de groupes spécifié (fonction désactivée)
 
 void MainWindow::hideMenu(){
     ui->stackedWidget->setCurrentIndex(0);
-    nbGroupes = ui->spinBox->value();
+    //nbGroupes = ui->spinBox->value();
     ui->stackedWidget->addWidget(ui->exProfil);
     ui->exProfil->show();
 
@@ -502,10 +518,16 @@ void MainWindow::hideMenu(){
 // CONFIRM ! Fonction associée au bouton "Valider l'ordre"
 // Teste s'il reste des incohérences dans le classement des profils (un profil inférieur en tout point à un autre ne peut pas être mieux classé)
 // S'il n'y a aucune incohérence, la fonction fait basculer au prochain écran d'instructions
+// A noter que la comparaison n'est effectuée que sur les 4 premiers critères !
 
 
 void MainWindow::confirm(){
+
+    //flag indiquant s'il y a des incohérences, conditionne le passage à l'écran suivant
     int inco = 0;
+
+    //Détection des incohérences
+
     for (unsigned long long i =1; i<profilsOrdre.size()-1;i++)
     {Profil *A = profilsOrdre[i];
         if (A->getNumber()<7)
@@ -522,17 +544,25 @@ void MainWindow::confirm(){
             // A->setStyleSheet("QToolButton{background-color:rgb(255, 0, 0);}");
         inco +=1;}}
 }
+
+
+    //"Si pas d'incohérences..."
     if (inco == 0){
 
     ui->stackedWidget->setCurrentIndex(2);
 
+
+    //Pour chaque profil, `m_state` passe à 1 ce qui empêche notamment de pouvoir les déplacer/cliquer pendant le phase de comparaison.
     for (unsigned long long i =0; i<profilsOrdre.size();i++)
     {profilsOrdre[i]->m_state=1;}
+
+
+
     ui->stackedWidget->show();
-     ui->stackedWidget->raise();
-     ui->scrollArea->hide();
-     ui->valider->hide();
-     ui->label->hide();
+    ui->stackedWidget->raise();
+    ui->scrollArea->hide();
+    ui->valider->hide();
+    ui->label->hide();
 
 }
 
@@ -570,6 +600,7 @@ ui->scrollArea->raise();
 
 // CONNEXIONPROFIL : établit le lien entre un objet Profil et la fenêtre dans laquelle il se trouve.
 // Est utilisée pour comparer deux profils lorsque l'on en fait glisser un sur un autre.
+// Gère également le "déplacement" des profils dans la grille (en réalité une nouvelle grille est créée à la place de l'ancienne)
 
 
 void MainWindow::connexionProfil(Profil* A, Profil* B){
@@ -584,6 +615,12 @@ if ( ((A->getPhysique()>=B->getPhysique()) && (A->getPsycho()>=B->getPsycho()) &
         )
 {ui->label->setText("Comparaison impossible !");
 ui->label->setStyleSheet("QLabel{color:rgb(255, 0, 0)}");}
+
+
+// SI LA COMPARAISON EST VALIDE :
+// La grille contenant les profils est recréée dans l'ordre qui découle du déplacement de profil.
+// Cela signifie qu'il faut réorganiser les listes indicesOrdre et profilsOrdre
+
 
 else {
     ui->label->setText("Classez les profils du plus fragile au moins fragile");
