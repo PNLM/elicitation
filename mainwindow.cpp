@@ -54,9 +54,9 @@ MainWindow::MainWindow(QWidget *parent)
     ui->tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
 
-    //Lecture des degrés de comparaison présents dans le fichier "degrees.pnl"
+    //Lecture des degrés de comparaison présents dans le fichier "degrees.ini"
 
-    QFile file("degrees.pnl");
+    QFile file("degrees.ini");
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
         return;
     QTextStream in(&file);
@@ -132,13 +132,13 @@ MainWindow::~MainWindow()
 void MainWindow::loadFile(){
     //QString fileName = QFileDialog::getOpenFileName(this,tr("Open File"), "", tr("Text files (*.txt)"));
     //QFile file(fileName);
-    QFile file("data.pnl");
+    QFile file("data.ini");
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
          return;
 
 
 
-    //Lecture des lignes de data.pnl
+    //Lecture des lignes de data.ini
      QTextStream in(&file);
      while (!in.atEnd()) {
          QString line = in.readLine();

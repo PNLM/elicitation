@@ -26,7 +26,7 @@ QSize TAILLE_PROFIL_MAX = QSize(180, 130);
 
 // Profil :
 // `ligne`, `colonne` indiquent la position du Profil dans la grille
-// La liste `crits` contient les valeurs associées aux critères définis dans "criteria.pnl"
+// La liste `crits` contient les valeurs associées aux critères définis dans "criteria.ini"
 // m_clicked indique s'il a été cliqué (1) ou non (0)
 // m_state
 
@@ -40,9 +40,9 @@ Profil:: Profil(int ligne, int colonne, int numero, std::vector<int> crits) :
 
     setAcceptDrops(true);
 
-// Lecture des critères dans le fichier "criteria.pnl"
+// Lecture des critères dans le fichier "criteria.ini"
 
-    QFile file("criteria.pnl");
+    QFile file("criteria.ini");
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
         return;
     QTextStream in(&file);
